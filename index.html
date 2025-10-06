@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tin tức Bóng đá - Trang đơn</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#ef4444;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#071021 0%, #0f1724 100%);color:#e6eef8}
+    header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#ffecd2,#fcb69f);display:flex;align-items:center;justify-content:center;color:#2b2b2b;font-weight:700}
+    nav{display:flex;gap:12px}
+    .btn{background:var(--glass);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .controls{display:flex;gap:12px;align-items:center}
+    .search{min-width:220px}
+    input.search-input{width:220px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    main{padding:20px;max-width:1100px;margin:18px auto}
+    .hero{display:grid;grid-template-columns:1fr 340px;gap:18px}
+    .hero-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .hero-card img{width:100%;height:220px;object-fit:cover;border-radius:8px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+    .article{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px;min-height:160px;display:flex;flex-direction:column;gap:8px}
+    .article h3{margin:0;font-size:16px}
+    .meta{font-size:13px;color:var(--muted)}
+    .category{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.04);font-size:13px}
+    .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    footer{max-width:1100px;margin:24px auto;color:var(--muted);font-size:14px}
+    .load-more{display:block;margin:18px auto;padding:10px 18px;border-radius:10px;border:none;background:var(--accent);color:white;cursor:pointer}
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.7);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:var(--card);border-radius:12px;padding:18px;max-width:880px;width:100%;max-height:85vh;overflow:auto}
+    .modal img{width:100%;height:340px;object-fit:cover;border-radius:8px}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.search-input{width:140px}}
+    @media (max-width:600px){.grid{grid-template-columns:1fr}.brand .logo{width:38px;height:38px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">BĐ</div>
+      <div>
+        <div style="font-weight:700">Bóng Đá 24/7</div>
+        <div style="font-size:12px;color:var(--muted)">Tin tức - Phân tích - Kết quả</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="search">
+        <input class="search-input" id="search" placeholder="Tìm bài viết..." />
+      </div>
+      <button class="btn" id="darkToggle">⚽️ Giao diện</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <article class="hero-card" id="featured"></article>
+      <aside class="hero-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <strong>Tin nhanh</strong>
+          <span class="meta">Cập nhật</span>
+        </div>
+        <div id="breaking"></div>
+      </aside>
+    </section>
+
+    <section style="margin-top:18px">
+      <div class="filters">
+        <button class="btn category" data-cat="tatca">Tất cả</button>
+        <button class="btn category" data-cat="vongloai">Vòng loại</button>
+        <button class="btn category" data-cat="vleague">V.League</button>
+        <button class="btn category" data-cat="euro">Euro</button>
+        <button class="btn category" data-cat="champions">Champions League</button>
+        <button class="btn category" data-cat="chuyenmuc">Phân tích</button>
+        <button class="btn category" data-cat="quocte">Quốc tế</button>
+      </div>
+      <div class="grid" id="list"></div>
+      <button class="load-more" id="loadMore">Xem thêm</button>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="year"></span> Bóng Đá 24/7 — Trang mẫu. Dùng cho demo và học tập.
+  </footer>
+
+  <!-- modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="btn" id="closeModal" style="float:right">Đóng</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const DATA = [
+      {id:1,title:'Việt Nam thắng Thái Lan: Đỉnh cao kịch tính',category:'vleague',time:'2025-09-28',
+       img:'https://images.unsplash.com/photo-1517927033932-b5d6a3b5bca6?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Trận đấu nghẹt thở với bàn thắng phút cuối...',
+       content:'Chi tiết trận đấu...',link:'https://vnexpress.net/bong-da'},
+      {id:2,title:'Messi ghi hat-trick, PSG lội ngược dòng',category:'champions',time:'2025-09-27',
+       img:'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Lionel Messi tiếp tục phong độ...',content:'Phân tích chuyên sâu...',
+       link:'https://www.uefa.com/'},
+      {id:3,title:'Cập nhật tình hình chấn thương của Ronaldo',category:'chuyenmuc',time:'2025-09-26',
+       img:'https://images.unsplash.com/photo-1508606572321-901ea443707f?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Ronaldo có khả năng vắng mặt...',content:'Thông tin từ đội ngũ y tế...',
+       link:'https://goal.com'},
+      {id:8,title:'CLB Hà Nội bổ nhiệm Harry Kewell làm HLV trưởng',category:'vleague',time:'2025-09-20',
+       img:'https://images.unsplash.com/photo-1520975913581-6d7a3a9a2b9b?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Cựu danh thủ Liverpool chính thức dẫn dắt CLB Hà Nội.',
+       content:'Harry Kewell đã ký hợp đồng và ra mắt CĐV...', 
+       link:'https://e.vnexpress.net/taxonomy/vietnam-football-news-4679'},
+      {id:9,title:'U23 Việt Nam tin dùng cầu thủ Việt kiều',category:'quocte',time:'2025-09-18',
+       img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'HLV Kim Sang Sik tiếp tục trao cơ hội cho các cầu thủ Việt kiều.',
+       content:'Danh sách triệu tập có nhiều cái tên đáng chú ý...',
+       link:'https://vietnamnet.vn/en/can-overseas-vietnamese-players-thrive-in-u23-vietnam-s-new-era-2449101.html'},
+      {id:10,title:'Nam Định thắng Hong Kong 1-0 tại AFC Champions League Two',category:'vleague',time:'2025-09-15',
+       img:'https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'CLB Nam Định giành chiến thắng tối thiểu.',content:'Bàn thắng duy nhất mang về 3 điểm...',
+       link:'https://vnexpress.net/bong-da'},
+      {id:11,title:'C.A. Hà Nội vô địch Siêu Cúp Việt Nam 2025',category:'vleague',time:'2025-09-10',
+       img:'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Trận cầu kịch tính với tỉ số 3-2 trước Nam Định.',
+       content:'Cúp vô địch Siêu Cúp Việt Nam đã thuộc về Hà Nội.',
+       link:'https://en.wikipedia.org/wiki/2025_Vietnamese_Super_Cup'},
+      {id:12,title:'Luiz Fernando sang V.League khoác áo Hà Nội FC',category:'chuyenmuc',time:'2025-08-20',
+       img:'https://images.unsplash.com/photo-1520975913581-6d7a3a9a2b9b?auto=format&fit=crop&w=1200&q=60',
+       excerpt:'Tiền đạo người Brazil chính thức cập bến V.League.',
+       content:'Thông tin chuyển nhượng đã được xác nhận...',
+       link:'https://www.newmexicoutd.com/news/2025/08/20/new-mexico-united-transfers-forward-luiz-fernando-to-vietnams-v-league-1-club-hanoi-fc/'}
+    ];
+
+    let shown = 0; const PER_PAGE = 4;
+    const listEl = document.getElementById('list');
+    const featuredEl = document.getElementById('featured');
+    const breakingEl = document.getElementById('breaking');
+    const yearEl = document.getElementById('year');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modalContent');
+    yearEl.textContent = new Date().getFullYear();
+
+    function renderFeatured(){
+      const item = DATA[0];
+      featuredEl.innerHTML = `
+        <img src="${item.img}" alt="${item.title}" />
+        <h2 style="margin-top:10px">${item.title}</h2>
+        <p class="meta">${item.time} • <span class="category">${item.category}</span></p>
+        <p style="color:var(--muted)">${item.excerpt}</p>
+        <button class="btn" onclick="openArticle(${item.id})">Đọc tiếp</button>
+      `;
+    }
+
+    function renderBreaking(){
+      const items = DATA.slice(1,4);
+      breakingEl.innerHTML = items.map(i=>`<div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.03)"><strong>${i.title}</strong><div class='meta'>${i.time}</div></div>`).join('');
+    }
+
+    function createCard(item){
+      const div = document.createElement('div');
+      div.className = 'article';
+      div.innerHTML = `
+        <img src="${item.img}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:6px"/>
+        <div style="display:flex;justify-content:space-between;align-items:center"><h3>${item.title}</h3><div class='meta'>${item.time}</div></div>
+        <p style="color:var(--muted);margin:0">${item.excerpt}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto"><span class='category'>${item.category}</span><button class='btn' onclick='openArticle(${item.id})'>Xem</button></div>
+      `;
+      return div;
+    }
+
+    function loadMore(){
+      const cur = listEl._current || DATA;
+      const next = cur.slice(shown, shown+PER_PAGE);
+      next.forEach(i=>listEl.appendChild(createCard(i)));
+      shown += next.length;
+      if(shown >= cur.length) document.getElementById('loadMore').style.display='none';
+    }
+
+    function openArticle(id){
+      const item = DATA.find(x=>x.id===id);
+      if(!item) return;
+      modalContent.innerHTML = `
+        <h2>${item.title}</h2>
+        <p class='meta'>${item.time} • <span class='category'>${item.category}</span></p>
+        <img src='${item.img}'/>
+        <p style='color:var(--muted)'>${item.content}</p>
+        <a href="${item.link}" target="_blank" style="color:var(--accent);display:inline-block;margin-top:12px">🔗 Xem chi tiết tại nguồn</a>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    document.getElementById('closeModal').addEventListener('click',()=>modal.style.display='none');
+    modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.style.display='none' });
+    document.getElementById('loadMore').addEventListener('click',loadMore);
+
+    document.querySelectorAll('.category[data-cat]').forEach(btn=>btn.addEventListener('click',()=>{
+      const cat = btn.getAttribute('data-cat');
+      listEl.innerHTML=''; shown=0;
+      const filtered = cat==='tatca'? DATA : DATA.filter(d=>d.category===cat);
+      filtered.slice(0,PER_PAGE).forEach(i=>listEl.appendChild(createCard(i)));
+      shown = Math.min(filtered.length, PER_PAGE);
+      document.getElementById('loadMore').style.display = filtered.length>shown ? 'block':'none';
+      listEl._current = filtered;
+    }));
+
+    document.getElementById('search').addEventListener('input', (e)=>{
+      const q = e.target.value.trim().toLowerCase();
+      const results = DATA.filter(d=>d.title.toLowerCase().includes(q) || d.excerpt.toLowerCase().includes(q));
+      listEl.innerHTML=''; shown=0;
+      results.slice(0,PER_PAGE).forEach(i=>listEl.appendChild(createCard(i)));
+      shown = Math.min(results.length, PER_PAGE);
+      document.getElementById('loadMore').style.display = results.length>shown ? 'block':'none';
+      listEl._current = results;
+    });
+
+    document.getElementById('darkToggle').addEventListener('click',()=>{
+      document.body.style.background = document.body.style.background.includes('#fff') ? 'linear-gradient(180deg,#071021 0%, #0f1724 100%)' : '#fff';
+      document.body.style.color = document.body.style.color === '#0b1220' ? '#e6eef8' : '#0b1220';
+    });
+
+    renderFeatured(); renderBreaking(); DATA.slice(0,PER_PAGE).forEach(i=>listEl.appendChild(createCard(i))); shown = Math.min(DATA.length, PER_PAGE); listEl._current = DATA;
+  </script>
+</body>
+</html>
